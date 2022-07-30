@@ -1,13 +1,32 @@
-name: Integration
+name: Integration #describes what the yaml file is called
 
-on:
-  push:
+on: # the on block is specifying when we want to run the jobs declared under it. i.e. when we push and a pull request is made
+  push: #this basically says on push we want to run the job and  merge the push to the main branch 
     branches: [main]
-  pull_request:
+  pull_request: #this basically says on pull request we want to run the job and merge the pull request on the main branch 
     branches: [main]
 
-jobs:
-  build:
+#so on the above actions we want run the jobs i.e. build and test the application
+
+jobs: #here we specify the jobs
+  build: #this is a build job. But it can be called whatever we want. However here we called it build because that is the job we want to execute. We want to build our application
+    runs-on: ubuntu-latest #this job or action has to run on a server. This server is hosted by github. so we need to specify te server the job or action will be executed on  
+
+    strategy: #this strategy allows us to specify multiple different node verisions. Remember the stragedy design pattern??? if we want to ensure that the steps can run on different node versions this is where we specify them and they will be run for all versions on the array
+      matrix:
+        node-version: [12.x, 14.x, 16.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps: # this means the steps that we need to take inorder to run this job correctly
+      - uses: actions/checkout@v2 #the first step we need to do is to checkout into that branch
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2 # the next thing we do is to setup node in the ubuntu server or job is going to be run on. if you were running a python application you will use setup python if you are running a go application you will use setup go
+        with:
+          node-version: ${{ matrix.node-version }} #here we specify the different versions of node that we want to use, which we get from the strategy block
+          cache: 'npm'
+      - run: npm i # we use the run command to run things in our application. first we want to install of our dependencies
+      - run: npm run build #then run build much like you do manually
+  unit-tests: #this is another job we want our jobs block to execute. remember we want to build and test?
     runs-on: ubuntu-latest
 
     strategy:
@@ -23,21 +42,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm i
-      - run: npm run build
-  unit-tests:
-    runs-on: ubuntu-latest
+      - run: npm run test #here we run tests instead 🙂
 
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x, 16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm i
-      - run: npm run test
+#this is pretty much everything we have to do to setup an action and it automate everything we have been doing manually
